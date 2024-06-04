@@ -4,5 +4,5 @@ token_ttl: 1
 secret_key: "your-secret-key"
 grpc:
   host: "localhost"
-  port: "50051"
+  port: "8080"
   timeout: 5
