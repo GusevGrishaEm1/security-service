@@ -16,6 +16,8 @@ COPY ./cmd/security_service/migrations ./migrations
 
 RUN go build -o security_service ./cmd/security_service
 
+RUN go test ./...
+
 EXPOSE 8080
 
 CMD ["./security_service", "--config=./config/dev.yaml"]

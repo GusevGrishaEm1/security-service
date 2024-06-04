@@ -15,7 +15,7 @@ import (
 
 // SetupDatabase creates a new SQLite database and a users table.
 func SetupDatabase() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./test.db")
+	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
