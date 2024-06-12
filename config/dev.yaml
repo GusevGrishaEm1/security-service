@@ -1,8 +1,7 @@
 env: "dev" # "dev" | "prod"
 storage_path: "./dev.db"
 token_ttl: 1
-secret_key: "your-secret-key"
+secret_key: "secret"
 grpc:
-  host: "localhost"
   port: "8080"
   timeout: 5

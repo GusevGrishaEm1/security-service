@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	security_servicev1 "github.com/GusevGrishaEm1/protos/gen/go/security_service"
@@ -17,6 +18,7 @@ type AuthService struct {
 	config  *config.Config
 	storage AuthStorage
 	security_servicev1.UnimplementedAuthServer
+	logger *slog.Logger
 }
 
 //go:generate mockgen -source=auth.go -destination=auth_mock.go -package=auth
@@ -25,24 +27,29 @@ type AuthStorage interface {
 	SaveUser(ctx context.Context, user model.User) error
 }
 
-func NewAuthService(ctx *config.Config, storage AuthStorage) *AuthService {
+func NewAuthService(ctx *config.Config, storage AuthStorage, logger *slog.Logger) *AuthService {
 	return &AuthService{
 		config:  ctx,
 		storage: storage,
+		logger:  logger,
 	}
 }
 
 func (s *AuthService) Login(ctx context.Context, req *security_servicev1.LoginRequest) (*security_servicev1.LoginResponse, error) {
+	s.logger.Info(req.Email)
 	user, err := s.storage.FindUserByEmail(ctx, req.Email)
 	if err != nil {
+		s.logger.Error(err.Error())
 		return nil, err
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
+		s.logger.Error(err.Error())
 		return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
 	}
 	token, err := s.createToken(user.Email)
 	if err != nil {
+		s.logger.Error(err.Error())
 		return nil, err
 	}
 	return &security_servicev1.LoginResponse{
@@ -51,8 +58,10 @@ func (s *AuthService) Login(ctx context.Context, req *security_servicev1.LoginRe
 }
 
 func (s *AuthService) Register(ctx context.Context, req *security_servicev1.RegisterRequest) (*security_servicev1.RegisterResponse, error) {
+	s.logger.Info(req.Email)
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
+		s.logger.Error(err.Error())
 		return nil, err
 	}
 	user := model.User{
@@ -61,10 +70,12 @@ func (s *AuthService) Register(ctx context.Context, req *security_servicev1.Regi
 	}
 	err = s.storage.SaveUser(ctx, user)
 	if err != nil {
+		s.logger.Error(err.Error())
 		return nil, err
 	}
 	token, err := s.createToken(user.Email)
 	if err != nil {
+		s.logger.Error(err.Error())
 		return nil, err
 	}
 	return &security_servicev1.RegisterResponse{

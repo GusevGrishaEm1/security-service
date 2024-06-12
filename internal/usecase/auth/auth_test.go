@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	security_servicev1 "github.com/GusevGrishaEm1/protos/gen/go/security_service"
@@ -40,7 +41,7 @@ func TestLogin(t *testing.T) {
 		Email:    "test",
 		Password: string(hashpassword),
 	}, nil)
-	service := NewAuthService(config, storage)
+	service := NewAuthService(config, storage, slog.Default())
 
 	res, err := service.Login(context.Background(), &security_servicev1.LoginRequest{
 		Email:    "test",
@@ -59,7 +60,7 @@ func TestRegister(t *testing.T) {
 	config.TokenTTL = 1
 	storage := &AuthStorageMock{}
 	storage.On("SaveUser", mock.Anything, mock.Anything).Return(nil)
-	service := NewAuthService(config, storage)
+	service := NewAuthService(config, storage, slog.Default())
 
 	res, err := service.Register(context.Background(), &security_servicev1.RegisterRequest{
 		Email:    "test",

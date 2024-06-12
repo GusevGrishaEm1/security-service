@@ -28,7 +28,7 @@ func StartServer(ctx context.Context, logger *slog.Logger, config *config.Config
 
 	// init service
 	logger.Info("Initializing service")
-	service := auth.NewAuthService(config, storage)
+	service := auth.NewAuthService(config, storage, logger)
 
 	// init server
 	logger.Info("Initializing server")

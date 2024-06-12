@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"os"
 
 	"github.com/GusevGrishaEm1/security-service/internal/config"
 	"github.com/GusevGrishaEm1/security-service/internal/server"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/pressly/goose/v3"
 )
 
 func main() {
@@ -16,6 +19,18 @@ func main() {
 	}
 
 	logger := initLogger(config.Env)
+
+	db, err := sql.Open("sqlite3", config.StoragePath)
+	if err != nil {
+		panic(err)
+	}
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		panic(err)
+	}
+	err = goose.Up(db, "migrations")
+	if err != nil {
+		panic(err)
+	}
 
 	logger.Info("Starting service", slog.Any("config", config))
 

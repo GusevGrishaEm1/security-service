@@ -20,7 +20,7 @@ func SetupDatabase() (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	createTableSQL := `CREATE TABLE IF NOT EXISTS users (
+	createTableSQL := `CREATE TABLE IF NOT EXISTS "users" (
 		id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 		email TEXT NOT NULL UNIQUE,
 		password TEXT NOT NULL,
@@ -51,7 +51,7 @@ func TestFindUserByEmail(t *testing.T) {
 		Email:    "test@example.com",
 		Password: "password123",
 	}
-	insertUserQuery := `INSERT INTO users (email, password) VALUES (?, ?)`
+	insertUserQuery := `INSERT INTO "users" (email, password) VALUES (?, ?)`
 	_, err = db.ExecContext(ctx, insertUserQuery, testUser.Email, testUser.Password)
 	if err != nil {
 		t.Fatalf("Failed to insert test user: %v", err)
@@ -91,7 +91,7 @@ func TestSaveUser(t *testing.T) {
 	}
 
 	// Verify the user was saved
-	row := db.QueryRowContext(ctx, `SELECT email, password FROM users WHERE email = ?`, testUser.Email)
+	row := db.QueryRowContext(ctx, `SELECT email, password FROM "users" WHERE email = ?`, testUser.Email)
 
 	var savedUser model.User
 	err = row.Scan(&savedUser.Email, &savedUser.Password)

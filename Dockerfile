@@ -12,7 +12,7 @@ RUN go mod download
 COPY ./internal ./internal
 COPY ./cmd ./cmd
 COPY ./config ./config
-COPY ./cmd/security_service/migrations ./migrations
+COPY ./migrations ./migrations
 
 RUN go build -o security_service ./cmd/security_service
 
