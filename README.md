@@ -1,6 +1,6 @@
-# Security Service
+# User App
 
-Security service for authentication and authorization.
+Service for manage users, authentication and authorization.
 
 ## Getting Started
 
@@ -13,11 +13,11 @@ This service provides essential security features for authentication and authori
 
 ## Configuration
 
-Ensure you have a configuration file `dev.yaml` located at `D:\projects\security-service\config\` (or adjust the path as needed). The configuration file should contain necessary settings for the service.
+Ensure you have a configuration file `.env`. The configuration file should contain necessary settings for the service.
 
 ## Building the Docker Image
 
 To build the Docker image, navigate to the root directory of the project and run the following command:
 
 ```sh
-docker build -t security_service .
+docker build --tag=userapp:latest .
