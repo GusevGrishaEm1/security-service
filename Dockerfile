@@ -1,23 +1,47 @@
-FROM golang:1.22.2-alpine
+# Use the official Golang image to build the app
+FROM golang:1.22.2 as builder
 
-ENV CGO_ENABLED=1
-
+# Set the Current Working Directory inside the container
 WORKDIR /app
 
+# Copy go mod and sum files
 COPY go.mod go.sum ./
 
-RUN apk add --no-cache gcc musl-dev
+# Download all dependencies
 RUN go mod download
 
-COPY ./internal ./internal
-COPY ./cmd ./cmd
-COPY ./config ./config
-COPY ./migrations ./migrations
+# Copy the source from the current directory to the Working Directory inside the container
+COPY . .
 
-RUN go build -o security_service ./cmd/security_service
+# Build the Go app
+RUN go build -o server ./cmd/userapp/main.go
 
-RUN go test ./...
+# Run tests with verbose output
+RUN go test -v ./...
 
-EXPOSE 8080
+# Start a new stage from scratch
+FROM debian:latest
 
-CMD ["./security_service", "--config=./config/dev.yaml"]
+# Install SQLite
+RUN apt-get update && apt-get install -y sqlite3 && apt-get clean
+
+# Copy the Pre-built binary file from the previous stage
+COPY --from=builder /app/server /app/server
+
+# Copy the .env file to the working directory
+COPY .env /app/.env
+
+# Copy the SQLite database file if it exists
+COPY user.db /app/user.db
+
+# Copy the migrations directory
+COPY migrations /app/migrations
+
+# Set the working directory
+WORKDIR /app
+
+# Expose the port the app runs on
+EXPOSE 50051
+
+# Command to run the executable
+CMD ["./server"]

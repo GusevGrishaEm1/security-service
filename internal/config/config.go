@@ -1,45 +1,66 @@
 package config
 
 import (
-	"errors"
 	"flag"
+	"github.com/joho/godotenv"
+	"log"
 	"os"
-
-	"github.com/ilyakaznacheev/cleanenv"
+	"strconv"
+	"time"
 )
 
 type Config struct {
-	Env         string     `yaml:"env" env-default:"local"`
-	StoragePath string     `yaml:"storage_path" env-required:"true"`
-	TokenTTL    int        `yaml:"token_ttl" env-default:"1h"`
-	SecretKey   string     `yaml:"secret_key" env-required:"true"`
-	GRPC        GRPCConfig `yaml:"grpc"`
-}
-
-type GRPCConfig struct {
-	Port    string `yaml:"port" env-default:"50051"`
-	Timeout int    `yaml:"timeout" env-default:"5"`
+	Port        int
+	StoragePath string
+	SecretKey   string
+	TokenTTL    time.Duration
 }
 
 func Load() (*Config, error) {
-	var res string
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
-	flag.StringVar(&res, "config", "", "config file path")
+	var (
+		port        = flag.Int("port", getEnvAsInt("PORT", 8080), "Server port")
+		storagePath = flag.String("storage-path", getEnv("STORAGE_PATH", "./data"), "Path to storage")
+		secretKey   = flag.String("secret-key", getEnv("SECRET_KEY", "default_secret"), "Secret key")
+		tokenTTL    = flag.Duration("token-ttl", getEnvAsDuration("TOKEN_TTL", time.Hour), "Token time-to-live")
+	)
+
 	flag.Parse()
 
-	if res == "" {
-		res = os.Getenv("CONFIG_FILE")
+	config := &Config{
+		Port:        *port,
+		StoragePath: *storagePath,
+		SecretKey:   *secretKey,
+		TokenTTL:    *tokenTTL,
 	}
 
-	if res == "" {
-		return nil, errors.New("config file path is empty")
+	return config, nil
+}
+
+// Helper functions to read environment variables with default values.
+func getEnv(key, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
 	}
+	return defaultValue
+}
 
-	var config Config
-
-	if err := cleanenv.ReadConfig(res, &config); err != nil {
-		return nil, err
+func getEnvAsInt(name string, defaultValue int) int {
+	valueStr := getEnv(name, "")
+	if value, err := strconv.Atoi(valueStr); err == nil {
+		return value
 	}
+	return defaultValue
+}
 
-	return &config, nil
+func getEnvAsDuration(name string, defaultValue time.Duration) time.Duration {
+	valueStr := getEnv(name, "")
+	if value, err := time.ParseDuration(valueStr); err == nil {
+		return value
+	}
+	return defaultValue
 }

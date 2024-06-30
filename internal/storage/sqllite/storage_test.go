@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 
 	"database/sql"
@@ -29,7 +30,12 @@ func SetupDatabase() (*sql.DB, error) {
 
 	_, err = db.Exec(createTableSQL)
 	if err != nil {
-		db.Close()
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				log.Fatalf("failed to close database connection: %v", err)
+			}
+		}(db)
 		return nil, fmt.Errorf("failed to create table: %w", err)
 	}
 
@@ -40,9 +46,14 @@ func TestFindUserByEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to set up test DB: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("failed to close database connection: %v", err)
+		}
+	}(db)
 
-	store := &storage{db: db}
+	store := &Storage{db: db}
 
 	ctx := context.Background()
 
@@ -74,7 +85,7 @@ func TestSaveUser(t *testing.T) {
 	}
 	defer db.Close()
 
-	store := &storage{db: db}
+	store := &Storage{db: db}
 
 	ctx := context.Background()
 

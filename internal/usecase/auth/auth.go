@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	security_servicev1 "github.com/GusevGrishaEm1/protos/gen/go/security_service"
+	securityservicev1 "github.com/GusevGrishaEm1/protos/gen/go/security_service"
 	"github.com/GusevGrishaEm1/security-service/internal/config"
 	"github.com/GusevGrishaEm1/security-service/internal/model"
 	"github.com/golang-jwt/jwt/v5"
@@ -14,28 +14,28 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type AuthService struct {
+type Service struct {
 	config  *config.Config
-	storage AuthStorage
-	security_servicev1.UnimplementedAuthServer
+	storage Storage
+	securityservicev1.UnimplementedAuthServer
 	logger *slog.Logger
 }
 
 //go:generate mockgen -source=auth.go -destination=auth_mock.go -package=auth
-type AuthStorage interface {
+type Storage interface {
 	FindUserByEmail(ctx context.Context, email string) (model.User, error)
 	SaveUser(ctx context.Context, user model.User) error
 }
 
-func NewAuthService(ctx *config.Config, storage AuthStorage, logger *slog.Logger) *AuthService {
-	return &AuthService{
+func NewAuthService(ctx *config.Config, storage Storage, logger *slog.Logger) *Service {
+	return &Service{
 		config:  ctx,
 		storage: storage,
 		logger:  logger,
 	}
 }
 
-func (s *AuthService) Login(ctx context.Context, req *security_servicev1.LoginRequest) (*security_servicev1.LoginResponse, error) {
+func (s *Service) Login(ctx context.Context, req *securityservicev1.LoginRequest) (*securityservicev1.LoginResponse, error) {
 	s.logger.Info(req.Email)
 	user, err := s.storage.FindUserByEmail(ctx, req.Email)
 	if err != nil {
@@ -52,12 +52,12 @@ func (s *AuthService) Login(ctx context.Context, req *security_servicev1.LoginRe
 		s.logger.Error(err.Error())
 		return nil, err
 	}
-	return &security_servicev1.LoginResponse{
+	return &securityservicev1.LoginResponse{
 		Token: token,
 	}, nil
 }
 
-func (s *AuthService) Register(ctx context.Context, req *security_servicev1.RegisterRequest) (*security_servicev1.RegisterResponse, error) {
+func (s *Service) Register(ctx context.Context, req *securityservicev1.RegisterRequest) (*securityservicev1.RegisterResponse, error) {
 	s.logger.Info(req.Email)
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -78,24 +78,24 @@ func (s *AuthService) Register(ctx context.Context, req *security_servicev1.Regi
 		s.logger.Error(err.Error())
 		return nil, err
 	}
-	return &security_servicev1.RegisterResponse{
+	return &securityservicev1.RegisterResponse{
 		Token: token,
 	}, nil
 }
 
-func (s *AuthService) Logout(context.Context, *security_servicev1.LogoutRequest) (*security_servicev1.LogoutResponse, error) {
+func (s *Service) Logout(context.Context, *securityservicev1.LogoutRequest) (*securityservicev1.LogoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
-func (s *AuthService) Refresh(context.Context, *security_servicev1.RefreshRequest) (*security_servicev1.RefreshResponse, error) {
+func (s *Service) Refresh(context.Context, *securityservicev1.RefreshRequest) (*securityservicev1.RefreshResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
 }
 
-func (s *AuthService) createToken(email string) (string, error) {
+func (s *Service) createToken(email string) (string, error) {
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"email": email,
-			"exp":   time.Now().Add(time.Hour * time.Duration(s.config.TokenTTL)).Unix(),
+			"exp":   time.Now().Add(s.config.TokenTTL).Unix(),
 		},
 	)
 

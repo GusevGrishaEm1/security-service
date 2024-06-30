@@ -1,7 +1,0 @@
-env: "dev" # "dev" | "prod"
-storage_path: "./dev.db"
-token_ttl: 1
-secret_key: "secret"
-grpc:
-  port: "8080"
-  timeout: 5
